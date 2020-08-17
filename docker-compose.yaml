@@ -1,0 +1,49 @@
+version: '3.7'
+
+services:
+  # Reversed proxy for all services
+  traefik:
+    image: "traefik:v2.2"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    volumes:
+      # - "./traefik:/etc/traefik/traefik.yaml"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "9000:9000"
+
+  # Manage all containers
+  portainer:
+    image: "portainer/portainer:1.24.1"
+    container_name: "portainer"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.portianer.loadbalancer.server.port=9000"
+      # http router
+      - "traefik.http.routers.portainer.rule=Host(`portainer.prova`)"
+      - "traefik.http.routers.http.entrypoints=web"
+      - "traefik.http.routers.http.service=portianer"
+
+  # Database Administrator GUI
+  adminer:
+    image: "adminer:4.7.7-standalone"
+    container_name: "adminer"
+    environment:
+      - "ADMINER_DESIGN=rmsoft"
+      - "ADMINER_PLUGINS=tables-filter"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      # http router
+      - "traefik.http.routers.adminer.rule=Host(`adminer.prova`)"
+      - "traefik.http.routers.http.entrypoints=web"
+      - "traefik.http.routers.http.service=adminer"
