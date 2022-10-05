@@ -1,5 +1,12 @@
 version: '3.7'
 
+networks:
+  imperator:
+    driver: bridge
+volumes:
+  postgresql-v:
+    driver: local
+
 services:
   # Reversed proxy for all services
   traefik:
@@ -47,3 +54,14 @@ services:
       - "traefik.http.routers.adminer.rule=Host(`adminer.prova`)"
       - "traefik.http.routers.http.entrypoints=web"
       - "traefik.http.routers.http.service=adminer"
+
+  # Local dev database
+  postgresql:
+    image: "postgres:14"
+    container_name: "postgres"
+    environment:
+      - "POSTGRES_USER=mew"
+      - "POSTGRES_PASSWORD=rooting#f&hv_3"
+    volumes:
+      - postgresql-v:/var/lib/postgresql/data
+    # labels:
