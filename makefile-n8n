@@ -1,0 +1,56 @@
+# Makefile for managing the n8n Docker Compose stack
+# IMPORTANT: Command lines MUST be indented with a single TAB character, not spaces.
+
+# Declare all targets as phony to avoid conflicts with filenames
+.PHONY: up down start stop logs logs-n8n logs-db restart ps shell-n8n shell-db prune help
+
+# Default target executed when you run `make`
+.DEFAULT_GOAL := help
+
+# --- Targets ---
+
+up: ## Start all services in the background
+	@echo "Starting n8n stack..."
+	@docker compose -f docker-compose-n8n.yaml up -d
+
+down: ## Stop and remove all services, including orphans
+	@echo "Stopping n8n stack..."
+	@docker compose -f docker-compose-n8n.yaml down --remove-orphans
+
+start: up ## Alias for 'up'
+
+stop: down ## Alias for 'down'
+
+logs: ## View logs from all services
+	@docker compose -f docker-compose-n8n.yaml logs -f
+
+logs-n8n: ## View logs specifically from the n8n service
+	@docker compose -f docker-compose-n8n.yaml logs -f n8n
+
+logs-db: ## View logs specifically from the postgres service
+	@docker compose -f docker-compose-n8n.yaml logs -f postgres
+
+restart: ## Restart all services
+	@echo "Restarting n8n stack..."
+	@docker compose -f docker-compose-n8n.yaml restart
+
+ps: ## List running containers for this project
+	@docker compose -f docker-compose-n8n.yaml ps
+
+shell-n8n: ## Open a shell inside the n8n container
+	@docker compose -f docker-compose-n8n.yaml exec n8n sh
+
+shell-db: ## Open a shell inside the postgres container
+	@docker compose -f docker-compose-n8n.yaml exec postgres sh
+
+prune: ## Remove stopped containers and unused networks
+	@echo "Cleaning up..."
+	@docker compose -f docker-compose-n8n.yaml down --remove-orphans
+	@docker system prune -f
+
+help: ## Display this help screen
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@perl -ne 'if (/^([a-zA-Z_-]+):.*?## (.*)\r?$$/) { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' makefile-n8n
+

@@ -1,0 +1,57 @@
+# docker-compose-n8n.yaml
+
+# Set the project name directly in the compose file
+name: imperator_n8n
+
+services:
+  # n8n - The main application service
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_app
+    restart: unless-stopped
+    ports:
+      # This value is now substituted from the .env file
+      - "127.0.0.1:${N8N_PORT}:5678"
+    environment:
+      # These values are now substituted from the .env file
+      - TZ=${TZ}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - DB_TYPE=${DB_TYPE}
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+    volumes:
+      - ./n8n/data/n8n_app:/home/node/.n8n
+    networks:
+      - n8n_network
+    depends_on:
+      - postgres
+
+  # PostgreSQL - The database service
+  postgres:
+    image: postgres:16
+    container_name: n8n_db
+    restart: unless-stopped
+    environment:
+      # These values are now substituted from the .env file
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ./n8n/data/postgres:/var/lib/postgresql/data
+    networks:
+      - n8n_network
+    healthcheck:
+      # The $$ syntax escapes the $, so the variables are evaluated inside the container
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  n8n_network:
+    driver: bridge
